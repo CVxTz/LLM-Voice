@@ -8,8 +8,8 @@ class AudioRecorder(Element, component="audio_recorder.vue"):
         super().__init__()
         self.on("audio_ready", on_audio_ready)
 
-    async def start_recording(self) -> None:
-        await self.run_method("startRecording")
+    def start_recording(self) -> None:
+        self.run_method("startRecording")
 
     def stop_recording(self) -> None:
         self.run_method("stopRecording")
