@@ -10,7 +10,6 @@ class AudioData:
 
     def set_audio_byte64(self, audio_data):
         self.audio_byte64 = audio_data.args["audioBlobBase64"]
-        ui.notify(f"Audio len Base64: {len(self.audio_byte64)}")
 
     def get_audio_bytes(self):
         audio_data = self.audio_byte64.encode()
