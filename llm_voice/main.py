@@ -29,7 +29,7 @@ async def index():
         "Play",
         on_click=lambda: audio_recorder.play_recorded_audio()
         if audio_data.audio_byte64
-        else ui.notify("No data to download"),
+        else ui.notify("No data to Play"),
     )
     ui.button(
         "Download",
