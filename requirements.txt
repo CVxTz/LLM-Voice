@@ -1,0 +1,5 @@
+loguru==0.7.2
+requests~=2.31.0
+nicegui==1.4.17
+pydantic~=2.6.1
+assemblyai==0.24.0
