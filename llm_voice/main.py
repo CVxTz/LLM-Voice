@@ -25,7 +25,12 @@ async def index():
 
     audio_recorder = AudioRecorder(on_audio_ready=audio_data.set_audio_byte64)
 
-    ui.button("Play", on_click=audio_recorder.play_recorded_audio)
+    ui.button(
+        "Play",
+        on_click=lambda: audio_recorder.play_recorded_audio()
+        if audio_data.audio_byte64
+        else ui.notify("No data to download"),
+    )
     ui.button(
         "Download",
         on_click=lambda: ui.download(audio_data.get_audio_bytes(), "audio.ogx")

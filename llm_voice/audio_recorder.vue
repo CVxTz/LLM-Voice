@@ -2,7 +2,6 @@
   <div>
     <button class="record-button" @mousedown="startRecording" @mouseup="stopRecording">Hold to Record</button>
     <audio ref="audioPlayer"></audio>
-    <div v-if="audioBlobSize !== null">Audio Blob Size: {{ audioBlobSize }} bytes</div>
   </div>
 </template>
 
@@ -15,7 +14,6 @@ export default {
       mediaRecorder: null,
       stream: null,
       audioURL: null,
-      audioBlobSize: null,
       audioBlob: null
     };
   },
@@ -60,7 +58,7 @@ export default {
         this.mediaRecorder.addEventListener('stop', () => {
           this.isRecording = false;
           this.saveBlob();
-          this.playRecordedAudio();
+          // this.playRecordedAudio();
         });
         this.mediaRecorder.stop();
       }
@@ -72,7 +70,6 @@ export default {
     },
     saveBlob() {
       this.audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-      this.audioBlobSize = this.audioChunks.reduce((acc, chunk) => acc + chunk.size, 0);
     },
     emitBlob() {
       const reader = new FileReader();
