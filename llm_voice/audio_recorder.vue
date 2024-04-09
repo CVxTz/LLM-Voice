@@ -1,7 +1,7 @@
 <template>
   <div>
     <button class="record-button" @mousedown="startRecording" @mouseup="stopRecording">Hold to Record</button>
-    <audio ref="audioPlayer" @ended="handleAudioEnded"></audio>
+    <audio ref="audioPlayer"></audio>
     <div v-if="audioBlobSize !== null">Audio Blob Size: {{ audioBlobSize }} bytes</div>
   </div>
 </template>
@@ -14,12 +14,20 @@ export default {
       audioChunks: [],
       mediaRecorder: null,
       stream: null,
-      audioURL: null, // Added audioURL property
-      audioBlobSize: null // Added audioBlobSize property
+      audioURL: null,
+      audioBlobSize: null,
+      audioBlob: null
     };
   },
   mounted() {
-    this.requestMicrophonePermission(); // Request microphone permission when the component is mounted
+    this.requestMicrophonePermission();
+  },
+  watch: {
+    audioBlob(newBlob, oldBlob) {
+      if (newBlob && newBlob !== oldBlob) {
+        this.emitBlob(); // Emit the blob when it's non-null and changes
+      }
+    }
   },
   methods: {
     async requestMicrophonePermission() {
@@ -34,7 +42,7 @@ export default {
         if (!this.stream) {
           await this.requestMicrophonePermission();
         }
-        this.audioChunks = []; // Clear previous audio chunks
+        this.audioChunks = [];
         this.mediaRecorder = new MediaRecorder(this.stream);
         this.mediaRecorder.addEventListener('dataavailable', event => {
           if (event.data.size > 0) {
@@ -51,20 +59,28 @@ export default {
       if (this.isRecording) {
         this.mediaRecorder.addEventListener('stop', () => {
           this.isRecording = false;
-          this.playRecordedAudio(); // Call playRecordedAudio() after recording is stopped
+          this.saveBlob();
+          this.playRecordedAudio();
         });
         this.mediaRecorder.stop();
       }
     },
     async playRecordedAudio() {
-      const audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
-      this.audioURL = window.URL.createObjectURL(audioBlob); // Update audioURL with new recording
+      this.audioURL = window.URL.createObjectURL(this.audioBlob);
       this.$refs.audioPlayer.src = this.audioURL;
       this.$refs.audioPlayer.play();
     },
-    handleAudioEnded() {
-      this.$emit('audio_ready', { audioBlob: new Blob(this.audioChunks, { type: 'audio/wav' }) });
+    saveBlob() {
+      this.audioBlob = new Blob(this.audioChunks, { type: 'audio/wav' });
       this.audioBlobSize = this.audioChunks.reduce((acc, chunk) => acc + chunk.size, 0);
+    },
+    emitBlob() {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64Data = reader.result.split(',')[1]; // Extracting base64 data from the result
+        this.$emit('audio_ready', { audioBlobBase64: base64Data });
+      };
+      reader.readAsDataURL(this.audioBlob);
     }
   }
 };
@@ -72,21 +88,19 @@ export default {
 
 <style scoped>
 .record-button {
-  width: 100px; /* Set your desired width */
-  height: 100px; /* Set your desired height */
-  border-radius: 50%; /* Make it a circle */
-  background-color: red; /* Set button background color */
-  color: white; /* Set text color */
-  border: 2px solid white; /* Set border color and width */
-  font-size: 16px; /* Set font size */
-  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Add a small shadow */
-  transition: transform 0.2s, box-shadow 0.2s; /* Add transition effects */
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: red;
+  color: white;
+  border: 2px solid white;
+  font-size: 16px;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .record-button:active {
-  transform: translateY(2px); /* Move the button slightly down when pressed */
-  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); /* Adjust shadow when pressed */
+  transform: translateY(2px);
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
 }
-
-/* Add your styles here if needed */
 </style>
