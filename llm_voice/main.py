@@ -1,43 +1,57 @@
-import base64
-
 from audio_recorder import AudioRecorder
-from nicegui import ui
+from nicegui import run, ui
+
+from llm_voice.llm import call_llm
+from llm_voice.stt import transcribe_audio
 
 
-class AudioData:
+class PageData:
     def __init__(self):
         self.audio_byte64 = None
+        self.prompt = "Speak while holding the button and your prompt will appear here!"
+        self.response = "The LLM will respond here."
+        self.response_html = self.response
+        self.response_audio = ""
 
-    def set_audio_byte64(self, audio_data):
+    async def run_workflow(self, audio_data):
+        self.prompt = "Transcribing audio..."
+        self.response_html = ""
         self.audio_byte64 = audio_data.args["audioBlobBase64"]
-
-    def get_audio_bytes(self):
-        audio_data = self.audio_byte64.encode()
-        content = base64.b64decode(audio_data)
-
-        return content
+        self.prompt = await run.io_bound(
+            callback=transcribe_audio, base64_audio=self.audio_byte64
+        )
+        self.response_html = "Calling LLM..."
+        self.response = await run.io_bound(callback=call_llm, prompt=self.prompt)
+        self.response_html = self.response.replace("\n", "</br>")
+        ui.notify("Result Ready!")
 
 
 @ui.page("/")
 async def index():
-    audio_data = AudioData()
+    page_data = PageData()
 
-    with ui.row().classes("w-full justify-center"):
-        audio_recorder = AudioRecorder(on_audio_ready=audio_data.set_audio_byte64)
+    row_1 = ui.row().classes("w-full justify-center")
+    row_2 = ui.row().classes("w-full justify-center")
+    row_3 = ui.row().classes("w-full justify-center")
 
-    with ui.row().classes("w-full justify-center"):
-        ui.button(
-            "Play",
-            on_click=lambda: audio_recorder.play_recorded_audio()
-            if audio_data.audio_byte64
-            else ui.notify("No data to Play"),
-        )
-        ui.button(
-            "Download",
-            on_click=lambda: ui.download(audio_data.get_audio_bytes(), "audio.ogx")
-            if audio_data.audio_byte64
-            else ui.notify("No data to download"),
-        )
+    with row_1:
+        AudioRecorder(on_audio_ready=page_data.run_workflow)
+
+    with row_2:
+        with ui.column():
+            ui.label("Prompt:")
+
+            ui.label().bind_text_from(page_data, "prompt").classes(
+                "text-lg sm:text-2xl text-gray-800 bg-gray-100 rounded-lg shadow-lg p-6"
+            )
+
+    with row_3:
+        with ui.column():
+            ui.label("Response:")
+
+            ui.html().bind_content(page_data, "response_html").classes(
+                "text-lg sm:text-2xl text-gray-800 bg-gray-100 rounded-lg shadow-lg p-6"
+            )
 
 
 ui.run()

@@ -4,3 +4,4 @@ nicegui==1.4.17
 pydantic~=2.6.1
 assemblyai==0.24.0
 ruff==0.3.5
+replicate~=0.25.2

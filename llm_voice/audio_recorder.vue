@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button class="record-button" @mousedown="startRecording" @mouseup="stopRecording">Hold to Record</button>
+    <button class="record-button" @mousedown="startRecording" @mouseup="stopRecording">Hold to speak</button>
     <audio ref="audioPlayer"></audio>
   </div>
 </template>
